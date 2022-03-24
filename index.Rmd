@@ -14,7 +14,7 @@ After looking at data on the [ONS website](https://www.ons.gov.uk/peoplepopulati
 
 ##Data
 
-Below is an overview of the data from the documents I plan to use.
+Below are the libraries for the project
 
 ```{r, warning=FALSE}
 
@@ -30,6 +30,14 @@ library(tinytex)
 #code to make make code more accessible
 library(here)
 
+library(broom)
+library(ggplot2)
+
+```
+ 
+Below is the data for the initial plot
+
+```{r} 
 #load from my computer
 #fetch names of the sheets
 file <- here("data","domainsandmeasuresautumn2019.xls")
@@ -38,7 +46,7 @@ excel_sheets(file)
 #read the csv file
 df_autumn <- read_excel(file, "3.4 Psychosocial health")
 
-#extracts only the data from rows 12 to 28 ie the rows about depression across the years and reassigns t
+#extracts only the data from rows 12 to 28 ie the rows about depression across the years and reassigns it
 depression_by_year <- df_autumn %>% slice(13:27)
 
 #removes the confidence interval columns
@@ -60,5 +68,23 @@ p <- ggplot(data=dby_mod, mapping=aes(x=year, y=people))
 p + geom_line() + ggtitle("Depression in the UK over the years") + ylab("People (%)")
 ```
 
+#Main
+
+Now I will plot depression data on a map of the UK.
+https://datatricks.co.uk/creating-maps-in-r
+
+```{r}
+#extracts the data from df_autumn of regions in the UK
+depression_by_region <- df_autumn %>% slice(36:48)
+
+#removes the confidence interval columns
+dbr_mod <- depression_by_region %>% select(-c(...3,...4))
+
+#renames columns to meaningful values
+colnames(dbr_mod) <- c("region","people")
+
+#load shapefile of UK regions
+shapefile <- read.csv()
+```
 
 
