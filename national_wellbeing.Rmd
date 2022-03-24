@@ -1,0 +1,64 @@
+---
+title: "National well-being"
+author: "Jake Wilson"
+date: "17/03/2022"
+output: html_document
+---
+
+# Measuring National Well-being in 2019
+##Introduction
+
+My *intial idea* for this project was to project depression scores on a map of the United Kingdom and compare the scores across different counties using a colour scale to represent higher and lower symptoms of depression.
+
+After looking at data on the [ONS website](https://www.ons.gov.uk/peoplepopulationandcommunity/wellbeing/datasets/measuringnationalwellbeingdomainsandmeasures) I realised that the data was separated in **spring** and **autumn**. This gave me the idea to merge my initial idea and also to compare the data between seasons. This would also give me the opportunity to give some interesting visualisation to the graph by using autumnal colours and spring colours in the colour scale.
+
+##Data
+
+Below is an overview of the data from the documents I plan to use.
+
+```{r, warning=FALSE}
+
+#code to make a graph
+library(tidyverse)
+
+#code to read xls files
+library(readxl)
+
+#code to convert rmd file to pdf
+library(tinytex)
+
+#code to make make code more accessible
+library(here)
+
+#load from my computer
+#fetch names of the sheets
+file <- here("data","domainsandmeasuresautumn2019.xls")
+excel_sheets(file)
+
+#read the csv file
+df_autumn <- read_excel(file, "3.4 Psychosocial health")
+
+#extracts only the data from rows 12 to 28 ie the rows about depression across the years and reassigns t
+depression_by_year <- df_autumn %>% slice(13:27)
+
+#removes the confidence interval columns
+dby_mod <- depression_by_year %>% select(-c(...3,...4))
+
+#renames columns to meaningful values
+colnames(dby_mod) <- c("year","people")
+
+#takes off values after the initial year
+dby_mod <- dby_mod %>% 
+  mutate(year = str_sub(year,1,4))
+
+#changes columns to integer values
+class(dby_mod$year)="integer"
+class(dby_mod$people)="integer"
+
+#plots and labels graph
+p <- ggplot(data=dby_mod, mapping=aes(x=year, y=people))
+p + geom_line() + ggtitle("Depression in the UK over the years") + ylab("People (%)")
+```
+
+
+
