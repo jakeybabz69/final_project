@@ -104,13 +104,9 @@ mapdata <- join(mapdata, dbr_mod, by="id")
 #defines the people column as a numeric vector
 class(mapdata$people)="numeric"
 
-
 #plot map regions in r using ggplot
 map <- ggplot() + geom_polygon(data = mapdata, aes(x = long, y = lat, group = group, fill = people), color = "#FFFFFF", size = 0.25) + coord_fixed(1)
 map + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + theme(axis.title.x=element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank()) + theme(axis.title.y=element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
-
-
-
 print(map)
 ```
 
