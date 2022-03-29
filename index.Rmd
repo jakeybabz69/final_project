@@ -35,7 +35,6 @@ library(ggplot2)
 library(rgeos)
 library(broom)
 library(dplyr)
-library(plyr)
 
 
 ```
@@ -73,9 +72,9 @@ p <- ggplot(data=dby_mod, mapping=aes(x=year, y=people))
 p + geom_line() + ggtitle("Depression in the UK over the years") + ylab("People (%)")
 ```
 
-#Main
+#Plotting maps
 
-Now I will plot depression data on a map of the UK. shapefile data comes from [geoportal.statistics.gov.uk](https://geoportal.statistics.gov.uk/datasets/ons::regions-december-2021-en-bfc/explore?location=52.837548%2C-2.489483%2C7.01)
+Now I will plot depression data on a map of the UK. The shapefile data containing regions is [here](https://geoportal.statistics.gov.uk/datasets/ons::regions-december-2021-en-bfc/explore?location=52.837548%2C-2.489483%2C7.01) and the data containing countries is here [https://geoportal.statistics.gov.uk/datasets/ons::countries-december-2021-uk-bfc/explore?location=55.340000%2C-3.316939%2C6.03]
 https://datatricks.co.uk/creating-maps-in-r
 
 ```{r}
@@ -88,25 +87,37 @@ dbr_mod <- depression_by_region %>% select(-c(...3,...4))
 #renames columns to a meaningful value and also to work with the shapefile data (see below)
 colnames(dbr_mod) <- c("id","people")
 
-#load shapefile of UK regions, note: here function does not work with readOGR
-shapefile <- readOGR("C:/Users/User/Desktop/University/Masters/psy6422/final_project/data","RGN_DEC_2021_EN_BFC")
+#load shapefile of England's regions
+shapefile_regions <- readOGR(here("data","RGN_DEC_2021_EN_BFC.shp"))
 
-#reshape shapefile so ggplot can interpret it
-mapdata <- tidy(shapefile, region = "RGN21NM")
+#load shapefile of the rest of the UK
+shapefile_uk <- readOGR(here("data","CTRY_DEC_2021_UK_BFC.shp"))
+
+#reshape England shapefile so ggplot can interpret it
+mapdata_regions <- tidy(shapefile_regions, region = "RGN21NM")
+
+#reshape UK shapefile so ggplot can interpret it
+mapdata_uk <- tidy(shapefile_uk, region = "CTRY21NM")
 
 #renames East to East of England to match the shapefile data 
 dbr_mod <- dbr_mod %>%
   mutate(id=recode(id,East="East of England"))
 
-#merges datasets
-mapdata <- join(mapdata, dbr_mod, by="id")
+#removes England from mapdata_uk as we already have the regions of the UK
+mapdata_uk_noeng <- mapdata_uk[-c(1:1245839),]
+
+#combines both mapdata dfs
+combined_mapdata <- bind_rows(mapdata_uk_noeng,mapdata_regions)
+
+#adds NHS data to shapefiles
+combined_mapdata <- inner_join(combined_mapdata, dbr_mod, by="id")
 
 #defines the people column as a numeric vector
-class(mapdata$people)="numeric"
+class(combined_mapdata$people)="numeric"
 
 #plot map regions in r using ggplot
-map <- ggplot() + geom_polygon(data = mapdata, aes(x = long, y = lat, group = group, fill = people), color = "#FFFFFF", size = 0.25) + coord_fixed(1)
-map + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + theme(axis.title.x=element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank()) + theme(axis.title.y=element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
-print(map)
+map <- ggplot() + geom_polygon(data = combined_mapdata, aes(x = long, y = lat, group = group, fill = people)) + coord_fixed(1) + guides(fill =guide_colourbar(title = "People (%)")) + scale_fill_distiller(palette = "Oranges")
+map + theme(panel.grid = element_blank()) + theme (axis.ticks = element_blank(), axis.text = element_blank()) + labs(x=element_blank(), y=element_blank(), title = "Autumn depression in the United Kingdom")
+
 ```
 
