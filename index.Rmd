@@ -1,7 +1,7 @@
 ---
-title: "National well-being"
+title: "map branch"
 author: "Jake Wilson"
-date: "17/03/2022"
+date: "29/03/2022"
 output: html_document
 ---
 
@@ -17,21 +17,26 @@ After looking at data on the [ONS website](https://www.ons.gov.uk/peoplepopulati
 Below are the libraries for the project
 
 ```{r, warning=FALSE}
-
 #code to make a graph
 library(tidyverse)
-
 #code to read xls files
 library(readxl)
-
 #code to convert rmd file to pdf
 library(tinytex)
-
 #code to make make code more accessible
 library(here)
 
-library(broom)
+library(maps)
+library(mapdata)
+library(maptools)
+library(rgdal)
+library(ggmap)
 library(ggplot2)
+library(rgeos)
+library(broom)
+library(dplyr)
+library(plyr)
+
 
 ```
  
@@ -70,7 +75,7 @@ p + geom_line() + ggtitle("Depression in the UK over the years") + ylab("People 
 
 #Main
 
-Now I will plot depression data on a map of the UK.
+Now I will plot depression data on a map of the UK. shapefile data comes from [geoportal.statistics.gov.uk](https://geoportal.statistics.gov.uk/datasets/ons::regions-december-2021-en-bfc/explore?location=52.837548%2C-2.489483%2C7.01)
 https://datatricks.co.uk/creating-maps-in-r
 
 ```{r}
@@ -80,11 +85,28 @@ depression_by_region <- df_autumn %>% slice(36:48)
 #removes the confidence interval columns
 dbr_mod <- depression_by_region %>% select(-c(...3,...4))
 
-#renames columns to meaningful values
-colnames(dbr_mod) <- c("region","people")
+#renames columns to a meaningful value and also to work with the shapefile data (see below)
+colnames(dbr_mod) <- c("id","people")
 
-#load shapefile of UK regions
-shapefile <- read.csv()
+#load shapefile of UK regions, note: here function does not work with readOGR
+shapefile <- readOGR("C:/Users/User/Desktop/University/Masters/psy6422/final_project/data","RGN_DEC_2021_EN_BFC")
+
+#reshape shapefile so ggplot can interpret it
+mapdata <- tidy(shapefile, region = "RGN21NM")
+
+#renames East to East of England to match the shapefile data 
+dbr_mod <- dbr_mod %>%
+  mutate(id=recode(id,East="East of England"))
+
+#merges datasets
+mapdata <- join(mapdata, dbr_mod, by="id")
+
+#defines the people column as a numeric vector
+class(mapdata$people)="numeric"
+
+#plot map regions in r using ggplot
+map <- ggplot() + geom_polygon(data = mapdata, aes(x = long, y = lat, group = group, fill = people), color = "#FFFFFF", size = 0.25) + coord_fixed(1)
+map + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + theme(axis.title.x=element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank()) + theme(axis.title.y=element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
+print(map)
 ```
-
 
