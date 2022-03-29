@@ -101,7 +101,7 @@ dbr_mod <- dbr_mod %>%
 #merges datasets
 mapdata <- join(mapdata, dbr_mod, by="id")
 
-
+#defines the people column as a numeric vector
 class(mapdata$people)="numeric"
 
 
