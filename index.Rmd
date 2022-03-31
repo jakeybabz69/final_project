@@ -1,31 +1,29 @@
 ---
-title: "map branch"
+title: "Measuring National Well-being"
 author: "Jake Wilson"
 date: "29/03/2022"
 output: html_document
 ---
 
-# Measuring National Well-being in 2019
-##Introduction
+#### Introduction
+This page will show how I used data from the Office of National Statistics to create a map of depression in the UK. This is for the module PSY6422 Data Management and Visualisation as part of an MSc in Cognitive Neuroscience and Human Neuroimaging. Please see all relevent data in my github repositry [here](https://github.com/jakeybabz69/). My idea for this project was to project **depression data** on a map of the **United Kingdom** and compare the scores across different regions using a colour scale to represent higher and lower symptoms of depression.
 
-My *intial idea* for this project was to project depression scores on a map of the United Kingdom and compare the scores across different counties using a colour scale to represent higher and lower symptoms of depression.
+#### Data Origins
+The data sets can be found on the [ONS website](https://www.ons.gov.uk/peoplepopulationandcommunity/wellbeing/datasets/measuringnationalwellbeingdomainsandmeasures). I didn't want my data to be affected by the SARS-CoV-2 pandemic and wanted it to represent *normal* conditions in the UK. Unfortunately the ONS does not have data past 2016 but before the SARS-CoV-2 pandemic but the data is suitable regardless.
 
-After looking at data on the [ONS website](https://www.ons.gov.uk/peoplepopulationandcommunity/wellbeing/datasets/measuringnationalwellbeingdomainsandmeasures) I realised that the data was separated in **spring** and **autumn**. This gave me the idea to merge my initial idea and also to compare the data between seasons. This would also give me the opportunity to give some interesting visualisation to the graph by using autumnal colours and spring colours in the colour scale.
+Both map data files are also produced by the ONS on their [open geography website](https://geoportal.statistics.gov.uk). The map data files containing regions can be found [here](https://geoportal.statistics.gov.uk/datasets/ons::regions-december-2021-en-bfc/explore?location=52.837548%2C-2.489483%2C7.01) and the data containing countries can be found [here](https://geoportal.statistics.gov.uk/datasets/ons::countries-december-2021-uk-bfc/explore?location=55.340000%2C-3.316939%2C6.03). These essentially give coordinated for r to use to construct a map of the UK.
 
-##Data
+#### Research Question
+My data attempts to educate people on how depression across the UK. Before I did this data visualisation, I could only guess at places with lower/higher levels of depression. Looking at the ONS data gave some indication however, mapping the data made it much more clear. 
 
-Below are the libraries for the project
+Below are the libraries needed for the project to run correctly.
 
-```{r, warning=FALSE}
-#code to make a graph
+```{r}
 library(tidyverse)
-#code to read xls files
 library(readxl)
-#code to convert rmd file to pdf
 library(tinytex)
-#code to make make code more accessible
 library(here)
-
+library(scales)
 library(maps)
 library(mapdata)
 library(maptools)
@@ -34,122 +32,144 @@ library(ggmap)
 library(ggplot2)
 library(rgeos)
 library(broom)
+library(RColorBrewer)
 library(dplyr)
-
-
-```
- 
-Below is the data for the initial plot
-
-```{r} 
-#load from my computer
-#fetch names of the sheets
-file <- here("data","domainsandmeasuresautumn2019.xls")
-excel_sheets(file)
-
-#read the csv file
-df_autumn <- read_excel(
-  file, "3.4 Psychosocial health")
-
-#extracts only the data from rows 12 to 28 ie the rows about depression across the years and reassigns it
-depression_by_year <- df_autumn %>% slice(13:27)
-
-#removes the confidence interval columns
-dby_mod <- depression_by_year %>% select(-c(...3,...4))
-
-#renames columns to meaningful values
-colnames(dby_mod) <- c("year","people")
-
-#takes off values after the initial year
-dby_mod <- dby_mod %>% 
-  mutate(year = str_sub(year,1,4))
-
-#changes columns to integer values
-class(dby_mod$year)="integer"
-class(dby_mod$people)="integer"
-
-#creates plot using depression data
-p <- ggplot(
-  data=dby_mod,
-  mapping=aes(
-    x=year,
-    y=people))
-
-#plots and labes graph
-p + 
-  geom_line()+
-  ggtitle("Depression in the UK over the years") +
-  ylab("People (%)")
 ```
 
-#Plotting maps
+#### Data Preparation
+```{r}
+#find ONS data file
+file <- here(
+  "data",
+  "domainsandmeasuresautumn2019.xls"
+  )
+excel_sheets(
+  file
+  )
 
-Now I will plot depression data on a map of the UK. The shapefile data containing regions is [here](https://geoportal.statistics.gov.uk/datasets/ons::regions-december-2021-en-bfc/explore?location=52.837548%2C-2.489483%2C7.01) and the data containing countries is here [https://geoportal.statistics.gov.uk/datasets/ons::countries-december-2021-uk-bfc/explore?location=55.340000%2C-3.316939%2C6.03]
+```
+It's clear a lot of work is needed!
 
-https://datatricks.co.uk/creating-maps-in-r
+*Tasks
+ +There are several sheets but I only need one.
+ +The sheet contains a lot of useles information for my plot
+ +The columns are inapproriately named, especially to work with the map data
+ +One region name doesn't match the corresponding region in the map data
 
 ```{r}
-#extracts the data from df_autumn of regions in the UK
-depression_by_region <- df_autumn %>% slice(36:48)
+#read excel sheet
+df_uk <- read_excel(
+  file,
+  "3.4 Psychosocial health"
+  ) %>%
 
-#removes the confidence interval columns
-dbr_mod <- depression_by_region %>% select(-c(...3,...4))
+#extracts the data from df of regions in the UK
+  slice(
+    36:48
+    ) %>%
 
-#renames columns to a meaningful value and also to work with the shapefile data (see below)
-colnames(dbr_mod) <- c("id","people")
+#renames columns to a meaningful value and also to work with the map data (see below)
+  rename(
+    "id" = "National Well-being Measures, October 2019 release",
+    "people" = "...2"
+    ) %>%
+  
+#renames East to East of England to match the shapefile data (see below)
+  mutate(
+    id=recode(
+      id,
+      East="East of England"
+      ))
 
+```
+
+The ONS depression data is now ready to be used! Next the map data needs to be manipulated.
+Note: map data of regions of England as well as countries in the UK are included as the ONS depression data file contains both. There is not one file with both on the ONS website so this has to be dealt with.
+```{r}
 #load shapefile of England's regions
 shapefile_regions <- readOGR(
-  here("data","RGN_DEC_2021_EN_BFC.shp"))
+  here(
+    "data",
+    "RGN_DEC_2021_EN_BFC.shp"
+    ))
 
 #reshape England shapefile so ggplot can interpret it
 mapdata_regions <- tidy(
   shapefile_regions,
-  region = "RGN21NM")
-
-#renames East to East of England to match the shapefile data 
-dbr_mod <- dbr_mod %>%
-  mutate(
-    id=recode(
-      id,East="East of England"))
+  region = "RGN21NM"
+  )
 
 #load shapefile of the rest of the UK
 shapefile_uk <- readOGR(
-  here("data","CTRY_DEC_2021_UK_BFC.shp"))
+  here(
+  "data",
+  "CTRY_DEC_2021_UK_BFC.shp"
+  ))
 
-#reshape UK shapefile so ggplot can interpret it
+#reshape UK shapefile into a tidy data frame so ggplot can interpret it
 mapdata_uk <- tidy(
   shapefile_uk,
-  region = "CTRY21NM")
+  region = "CTRY21NM"
+  )
+```
+
+
+
+There are again problems.
+*Tasks
+ +remove England from the country data.
+ +combine mapdata to remove the England gap
+ +add ONS depression data to plot map data with it
+ +plot map
+
+```{r}
 
 #removes England from mapdata_uk as we already have the regions of the UK
-mapdata_uk_noeng <- mapdata_uk[-c(1:1245839),]
+mapdata_uk_noeng <- mapdata_uk[
+  -c(
+    1:1245839
+    )
+  ,
+  ]
 
 #combines both mapdata dfs
-combined_mapdata <- bind_rows(mapdata_uk_noeng,mapdata_regions)
+combined_mapdata <- bind_rows(
+  mapdata_uk_noeng,
+  mapdata_regions
+  ) %>%
 
-#adds NHS data to shapefiles
-combined_mapdata <- inner_join(
-  combined_mapdata,
-  dbr_mod,
-  by="id")
+#adds ONS depression data to shapefiles
+inner_join(
+  df_uk,
+  by="id"
+  ) %>%
 
 #defines the people column as a numeric vector
-class(combined_mapdata$people)="numeric"
+mutate(people = as.numeric(
+  people
+  ))
+```
 
+#### Data Visualisation
+The problems don't stop there!
+*Tasks
+ +The map plots on a grid, has labels for axis and ticks on the axis that need removing.
+ +An appropriate title needs to be given to the graph and to the legend
+ +As it stands, the legend shows darker colours as a lower percentage of depression which is counterintuitive
+ +It's hard to see some boundaries with some of the regions in England.
+```{r}
 #create plot, removes grid and axis and adds labels
 map <- ggplot() + 
   theme(
-  panel.grid = element_blank()) + 
-  theme (
+    panel.grid = element_blank()) + 
+  theme(
     axis.ticks = element_blank(),
     axis.text = element_blank()) +
   labs(
     x=element_blank(),
     y=element_blank(),
-    title = "Autumn depression in the United Kingdom",
+    title = "Depression across the United Kingdom",
     fill = "People (%)")
-
 
 #change to more appropriate colours and plots graph
 map + geom_polygon(
@@ -158,13 +178,24 @@ map + geom_polygon(
     x = long,
     y = lat,
     group = group,
-    fill = people),
+    fill = people
+    ),
   colour = "white",
-  size = 0.01) +
-  coord_fixed(1)+
-  scale_fill_gradient(
-    low = "#F9E076",
-    high = "#FA8128")
-
+  size = 0.01
+  ) +
+  coord_fixed(
+    1
+              ) +
+  scale_fill_gradientn(
+    colours = c(
+      "white",
+      "#d9f1ff",
+      "#59bfff",
+      "#000137",
+      "black"
+      ),
+                       values = scales::rescale(
+                         c(15,16,17,18)))
+                      
 ```
-
+#### Summary
