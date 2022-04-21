@@ -114,7 +114,6 @@ mapdata_uk <- tidy(
 ```
 
 
-
 There are again problems.
 *Tasks
  +remove England from the country data.
@@ -168,7 +167,7 @@ map <- ggplot() +
   labs(
     x=element_blank(),
     y=element_blank(),
-    title = "Depression across the United Kingdom",
+    title = "Prevalence of Depression across the United Kingdom",
     fill = "People (%)")
 
 #change to more appropriate colours and plots graph
@@ -188,14 +187,26 @@ map + geom_polygon(
               ) +
   scale_fill_gradientn(
     colours = c(
-      "white",
       "#d9f1ff",
       "#59bfff",
+      "#009dff",
       "#000137",
-      "black"
+      "#000817"
       ),
-                       values = scales::rescale(
-                         c(15,16,17,18)))
-                      
+    values = scales::rescale(
+      c(15,16,17,18)
+      ))
+       
+#saves plot to directory
+ggsave(filename = "depression_uk.png")
 ```
 #### Summary
+In summary, I have used publicly available data to create a plot of prevalence of depression across the UK.
+
+From the graph it is clear that:
+* Northern Ireland has the lowest prevalence of depression
+* The North East and West Midlands have the highest rates although it is unclear which is higher.
+
+If I had more time on this project I would include counties as opposed to regions. This would enable readers to see the distribution of depression over the UK in more detail. I did find data for Clinical Commissioning Groups (CCG) which is essentially areas the NHS covers over counties however I couldn't find a suitable shapefile that matched, despite finding a CCG shapefile. To use that shapefile I would have had to ammend over approximately 100 CCG rows or find depression data for each county, which I couldn't.
+
+I would have also compared this data across multiple time-points and so produce multiple maps.
