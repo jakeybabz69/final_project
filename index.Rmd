@@ -6,7 +6,7 @@ output: html_document
 ---
 
 #### Introduction
-This page will show how I used data from the Office of National Statistics to create a map of depression in the UK. This is for the module PSY6422 Data Management and Visualisation as part of an MSc in Cognitive Neuroscience and Human Neuroimaging. Please see all relevent data in my github repositry [here](https://github.com/jakeybabz69/). My idea for this project was to project **depression data** on a map of the **United Kingdom** and compare the scores across different regions using a colour scale to represent higher and lower symptoms of depression.
+This page will show how I used data from the Office of National Statistics to create a map of depression in the UK. This is for the module PSY6422 Data Management and Visualisation as part of an MSc in Cognitive Neuroscience and Human Neuroimaging. Please see all relevant data in my github repository [here](https://github.com/jakeybabz69/). My idea for this project was to project **depression data** on a map of the **United Kingdom** and compare the scores across different regions using a colour scale to represent higher and lower symptoms of depression.
 
 #### Data Origins
 The data sets can be found on the [ONS website](https://www.ons.gov.uk/peoplepopulationandcommunity/wellbeing/datasets/measuringnationalwellbeingdomainsandmeasures). I didn't want my data to be affected by the SARS-CoV-2 pandemic and wanted it to represent *normal* conditions in the UK. Unfortunately the ONS does not have data past 2016 but before the SARS-CoV-2 pandemic but the data is suitable regardless.
@@ -18,6 +18,10 @@ My data attempts to educate people on how depression across the UK. Before I did
 
 Below are the libraries needed for the project to run correctly.
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE,
+                      message = FALSE) #all chunks don't display warning and messages
+```
 ```{r}
 library(tidyverse)
 library(readxl)
@@ -43,6 +47,8 @@ file <- here(
   "data",
   "domainsandmeasuresautumn2019.xls"
   )
+
+#displays the sheets in the file
 excel_sheets(
   file
   )
@@ -50,11 +56,13 @@ excel_sheets(
 ```
 It's clear a lot of work is needed!
 
-*Tasks
- +There are several sheets but I only need one.
- +The sheet contains a lot of useles information for my plot
- +The columns are inapproriately named, especially to work with the map data
- +One region name doesn't match the corresponding region in the map data
+
+Problems:
+
+  * There are several sheets but I only need one.
+  * The sheet contains a lot of useles information for my plot.
+  * The columns are inapproriately named, especially to work with the map data.
+  * One region name doesn't match the corresponding region in the map data.
 
 ```{r}
 #read excel sheet
@@ -81,11 +89,15 @@ df_uk <- read_excel(
       East="East of England"
       ))
 
+#displays the top of the dataframe
+head(df_uk)
+
 ```
 
 The ONS depression data is now ready to be used! Next the map data needs to be manipulated.
-Note: map data of regions of England as well as countries in the UK are included as the ONS depression data file contains both. There is not one file with both on the ONS website so this has to be dealt with.
-```{r}
+*Note*: map data of regions of England as well as countries in the UK are included as the ONS depression data file contains both. There is not one file with both on the ONS website so this has to be dealt with.
+
+```{r, results = 'hide'}
 #load shapefile of England's regions
 shapefile_regions <- readOGR(
   here(
@@ -93,42 +105,49 @@ shapefile_regions <- readOGR(
     "RGN_DEC_2021_EN_BFC.shp"
     ))
 
-#reshape England shapefile so ggplot can interpret it
-mapdata_regions <- tidy(
-  shapefile_regions,
-  region = "RGN21NM"
-  )
-
 #load shapefile of the rest of the UK
 shapefile_uk <- readOGR(
   here(
   "data",
   "CTRY_DEC_2021_UK_BFC.shp"
   ))
+```
+```{r}
+#reshape England shapefile so ggplot can interpret it
+mapdata_regions <- tidy(
+  shapefile_regions,
+  region = "RGN21NM"
+  )
+
+#displays 10 random rows of the dataframe
+sample_n(mapdata_regions, 10)
 
 #reshape UK shapefile into a tidy data frame so ggplot can interpret it
 mapdata_uk <- tidy(
   shapefile_uk,
   region = "CTRY21NM"
   )
+
+#displays 10 random rows of the dataframe
+sample_n(mapdata_uk, 10)
 ```
 
 
-There are again problems.
-*Tasks
- +remove England from the country data.
- +combine mapdata to remove the England gap
- +add ONS depression data to plot map data with it
- +plot map
+There are again problems:
+
+
+  * Remove England from the country data.
+  * Combine mapdata to remove the England gap.
+  * Add ONS depression data to plot map data with it.
+  * Plot map.
 
 ```{r}
 
 #removes England from mapdata_uk as we already have the regions of the UK
 mapdata_uk_noeng <- mapdata_uk[
   -c(
-    1:1245839
-    )
-  ,
+    mapdata_uk$group == "England.1"
+    ),
   ]
 
 #combines both mapdata dfs
@@ -147,15 +166,35 @@ inner_join(
 mutate(people = as.numeric(
   people
   ))
-```
 
-#### Data Visualisation
+#displays the top of the dataframe
+head(combined_mapdata)
+
+map2 <- ggplot()
+  
+map2 + geom_polygon(
+  data = combined_mapdata,
+  aes(
+    x = long,
+    y = lat,
+    group = group,
+    fill = people
+    ))
+```
 The problems don't stop there!
-*Tasks
- +The map plots on a grid, has labels for axis and ticks on the axis that need removing.
- +An appropriate title needs to be given to the graph and to the legend
- +As it stands, the legend shows darker colours as a lower percentage of depression which is counterintuitive
- +It's hard to see some boundaries with some of the regions in England.
+
+
+Problems:
+
+  * The map plots on a graph, has labels on its axis and ticks on the axis that need removing.
+  * An appropriate title needs to be given to the graph and to the legend.
+  * The legend shows darker colours as a lower percentage of depression which is counter intuitive.
+  * It's hard to see some boundaries with some of the regions in England and the borders between these bits are unclear.
+  * The map is squashed
+  
+#### Data Visualisation
+Below is the code to plot the graph which overcome the problems above and thus, the final graph.
+ 
 ```{r}
 #create plot, removes grid and axis and adds labels
 map <- ggplot() + 
@@ -192,9 +231,6 @@ map + geom_polygon(
       "#009dff",
       "#000137",
       "#000817"
-      ),
-    values = scales::rescale(
-      c(15,16,17,18)
       ))
        
 #saves plot to directory
@@ -204,9 +240,16 @@ ggsave(filename = "depression_uk.png")
 In summary, I have used publicly available data to create a plot of prevalence of depression across the UK.
 
 From the graph it is clear that:
-* Northern Ireland has the lowest prevalence of depression
-* The North East and West Midlands have the highest rates although it is unclear which is higher.
 
-If I had more time on this project I would include counties as opposed to regions. This would enable readers to see the distribution of depression over the UK in more detail. I did find data for Clinical Commissioning Groups (CCG) which is essentially areas the NHS covers over counties however I couldn't find a suitable shapefile that matched, despite finding a CCG shapefile. To use that shapefile I would have had to ammend over approximately 100 CCG rows or find depression data for each county, which I couldn't.
+  * Northern Ireland has the lowest prevalence of depression.
+  * The North East and West Midlands have the highest prevalence.
 
-I would have also compared this data across multiple time-points and so produce multiple maps.
+##### Caveats
+Whilst the map shows that one area is has more/less people that are depressed, this does not mean that are more/less depressed. For example, it could be assumed that the North West is more depressed than Northern Ireland, however, this is not true and they only have a greater percentage of people that are depressed.
+
+Furthermore, the data does not say anything about severity, gender differences, individual county differences, age differences etc. In fact, the data represents an average and doesn't account for these differences on the individual level. For example, within the North West, it is more likely that across the whole region that someone will be depressed, yet if we account for gender, it may be that women would be more depressed than men. Therefore, the data assumes that the above variables don't affect it.
+
+##### Future Directions
+If I had more time on this project I would include counties as opposed to regions. This would enable readers to see the distribution of depression over the UK in more detail. I did find data for Clinical Commissioning Groups (CCG) which is essentially areas the NHS covers over counties however I couldn't find a suitable shapefile that matched, despite finding a CCG shapefile. To use that shapefile I would have had to amend over approximately 100 CCG rows or find depression data for each county, which I couldn't.
+
+I would have also compared this data across multiple time-points and so produce multiple maps. It may have also been interesting to investigate age, gender and income against depression, to name a few.
