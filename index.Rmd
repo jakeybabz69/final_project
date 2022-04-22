@@ -1,5 +1,5 @@
 ---
-title: "Measuring National Well-being"
+title: "Depression across the UK"
 author: "Jake Wilson"
 date: "29/03/2022"
 output: html_document
@@ -9,12 +9,14 @@ output: html_document
 This page will show how I used data from the Office of National Statistics to create a map of depression in the UK. This is for the module PSY6422 Data Management and Visualisation as part of an MSc in Cognitive Neuroscience and Human Neuroimaging. Please see all relevant data in my github repository [here](https://github.com/jakeybabz69/). My idea for this project was to project **depression data** on a map of the **United Kingdom** and compare the scores across different regions using a colour scale to represent higher and lower symptoms of depression.
 
 #### Data Origins
-The data sets can be found on the [ONS website](https://www.ons.gov.uk/peoplepopulationandcommunity/wellbeing/datasets/measuringnationalwellbeingdomainsandmeasures). I didn't want my data to be affected by the SARS-CoV-2 pandemic and wanted it to represent *normal* conditions in the UK. Unfortunately the ONS does not have data past 2016 but before the SARS-CoV-2 pandemic but the data is suitable regardless.
+The data for depression in across the UK can be found on the [ONS website](https://www.ons.gov.uk/peoplepopulationandcommunity/wellbeing/datasets/measuringnationalwellbeingdomainsandmeasures). I didn't want my data to be affected by the SARS-CoV-2 pandemic and wanted it to represent *normal* conditions in the UK. Unfortunately the ONS does not have data past 2016 but before the SARS-CoV-2 pandemic but the data is suitable regardless. I did find data from [Public Health England](https://fingertips.phe.org.uk/profile-group/mental-health/profile/common-mental-disorders/data#page/8/gid/8000026/pat/46/par/E39000018/ati/165/are/E38000202/iid/848/age/168/sex/4/cat/-1/ctp/-1/yrr/1/cid/4/tbm/1/page-options/tre-ao-1_tre-so-0) however couldn't find a suitable shapefile to match this data that wouldn't require too much work like the one I found [here](https://geoportal.statistics.gov.uk/datasets/d6acd30ad71f4e14b4de808e58d9bc4c/explore?location=52.743246%2C-2.452657%2C7.00). 
 
-Both map data files are also produced by the ONS on their [open geography website](https://geoportal.statistics.gov.uk). The map data files containing regions can be found [here](https://geoportal.statistics.gov.uk/datasets/ons::regions-december-2021-en-bfc/explore?location=52.837548%2C-2.489483%2C7.01) and the data containing countries can be found [here](https://geoportal.statistics.gov.uk/datasets/ons::countries-december-2021-uk-bfc/explore?location=55.340000%2C-3.316939%2C6.03). These essentially give coordinated for r to use to construct a map of the UK.
+Both map data files are also produced by the ONS on their [open geography website](https://geoportal.statistics.gov.uk). The map data files containing England's regions can be found [here](https://geoportal.statistics.gov.uk/datasets/ons::regions-december-2021-en-bfc/explore?location=52.837548%2C-2.489483%2C7.01) and the data containing countries can be found [here](https://geoportal.statistics.gov.uk/datasets/ons::countries-december-2021-uk-bfc/explore?location=55.340000%2C-3.316939%2C6.03). These essentially give coordinates for r to use to construct a map of the UK.
 
 #### Research Question
-My data attempts to educate people on how depression across the UK. Before I did this data visualisation, I could only guess at places with lower/higher levels of depression. Looking at the ONS data gave some indication however, mapping the data made it much more clear. 
+What is the prevalence of depression across the United Kingdom? How does this change between regions?
+
+My data attempts to educate people on how depression across the UK. Before I did this data visualisation, I could only guess at places with lower/higher levels of depression, and my guesses were wrong. Looking at the ONS data gave some indication, however, mapping the data made it much more clear. 
 
 Below are the libraries needed for the project to run correctly.
 
@@ -170,9 +172,9 @@ mutate(people = as.numeric(
 #displays the top of the dataframe
 head(combined_mapdata)
 
-map2 <- ggplot()
+map_test <- ggplot()
   
-map2 + geom_polygon(
+map_test + geom_polygon(
   data = combined_mapdata,
   aes(
     x = long,
@@ -206,8 +208,10 @@ map <- ggplot() +
   labs(
     x=element_blank(),
     y=element_blank(),
-    title = "Prevalence of Depression across the United Kingdom",
-    fill = "People (%)")
+    title = "Depression across the United Kingdom",
+    subtitle = "Prevalence per region",
+    fill = "People (%)",
+    caption = "Source: Office for National Statistics")
 
 #change to more appropriate colours and plots graph
 map + geom_polygon(
