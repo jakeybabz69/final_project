@@ -1,11 +1,11 @@
 # final_project
 
-#Overview
+# Overview
 This repository is the final project for PSY6422. 
 
 The project involves using publicly available depression data (https://www.ons.gov.uk/peoplepopulationandcommunity/wellbeing/datasets/measuringnationalwellbeingdomainsandmeasures) to fit to a map of the UK's regions (https://geoportal.statistics.gov.uk). 
 
-#Repository contents
+# Repository contents
 
 \data - the data used in the project
 
