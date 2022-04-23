@@ -25,21 +25,11 @@ knitr::opts_chunk$set(warning = FALSE,
                       message = FALSE) #all chunks don't display warning and messages
 ```
 ```{r}
-library(tidyverse)
 library(readxl)
-library(tinytex)
 library(here)
-library(scales)
-library(maps)
-library(mapdata)
-library(maptools)
 library(rgdal)
-library(ggmap)
-library(ggplot2)
-library(rgeos)
 library(broom)
-library(RColorBrewer)
-library(dplyr)
+library(tidyverse)
 ```
 
 #### Data Preparation
@@ -183,6 +173,7 @@ map_test + geom_polygon(
     fill = people
     ))
 ```
+
 The problems don't stop there!
 
 
