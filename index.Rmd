@@ -1,6 +1,6 @@
 ---
 title: "Poor Psychosocial Health across the UK"
-author: "Jake Wilson"
+author: ""
 date: "29/03/2022"
 output: html_document
 ---
