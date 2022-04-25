@@ -17,4 +17,4 @@ code.Rmd - R file used to run the project
 
 code.html - knitted version of code.Rmd
 
-code.pdf - pdf version of code.Rmd
+code.pdf - pdf version of code.Rmd. Interactive map does not load in pdf so it is recommended to use html file
