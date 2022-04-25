@@ -159,19 +159,9 @@ mutate(people = as.numeric(
   people
   ))
 
-#displays the top of the dataframe
-head(combined_mapdata)
+#displays 10 random rows of the final data frame
+sample_n(combined_mapdata, 10)
 
-map_test <- ggplot()
-  
-map_test + geom_polygon(
-  data = combined_mapdata,
-  aes(
-    x = long,
-    y = lat,
-    group = group,
-    fill = people
-    ))
 ```
 
 The problems don't stop there!
