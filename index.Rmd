@@ -23,8 +23,10 @@ My data attempts to educate people on poor psychosocial health across the UK. Be
 Below are the libraries needed for the project to run correctly.
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(warning = FALSE,
-                      message = FALSE) #all chunks don't display warning and messages
+knitr::opts_chunk$set(
+warning = FALSE,
+message = FALSE
+) #all chunks don't display warning and messages
 ```
 ```{r}
 library(readxl)
